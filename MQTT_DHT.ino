@@ -3,6 +3,12 @@
 #include <PubSubClient.h>
 #include <SPI.h> 
 
+//Ultrasonic 
+int distance; 
+long duration;
+
+#define Trig 33
+#define Echo 32
 
 //Sensor
 #define DHTPIN 4   
@@ -33,6 +39,9 @@ PubSubClient client(espClient);
 
 void setup()
 {
+  pinMode(Trig, OUTPUT);
+  pinMode(Echo, INPUT); 
+    
   pinMode(Led, OUTPUT); 
   pinMode(Relay, OUTPUT); 
   digitalWrite(Led, HIGH);
@@ -95,10 +104,33 @@ void mqttCallback(char* topic, byte* message, unsigned int length)
   }
 }
 
+void ultrasonic()
+{ 
+  digitalWrite(Led, HIGH);
+  digitalWrite(Trig, LOW);
+  delayMicroseconds(2); 
+  digitalWrite(Trig, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(Echo, LOW);
+  duration = pulseIn(Echo, HIGH); 
+  
+  distance = duration*0.034/2;
+  
+  if(distance < 10)
+  {
+    digitalWrite(Relay, HIGH); 
+  }
+  else 
+  {
+    digitalWrite(Relay, LOW); 
+  }
+  
+}
+  
 
 void loop()
 {
-   if (!client.connected()){
+    if (!client.connected()){
     reconnect();
   }
   
@@ -121,8 +153,10 @@ void loop()
   Serial.print(t);
   Serial.println(F("C "));
 
+    
   client.publish(mqttTemp1, String(t).c_str());
   client.publish(mqttHum1, String(h).c_str());
 }
+ultrasonic();
 client.loop();
 }
